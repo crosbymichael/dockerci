@@ -16,10 +16,10 @@ type Store struct {
 
 // New returns a new Store with a redis pool for the
 // given address
-func New(addr string) (*Store, error) {
+func New(addr string) *Store {
 	return &Store{
 		pool: newPool(addr),
-	}, nil
+	}
 }
 
 func (s *Store) Close() error {
