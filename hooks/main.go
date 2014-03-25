@@ -1,4 +1,3 @@
-// because it does not have to be complicated
 package main
 
 import (
@@ -6,17 +5,13 @@ import (
 	"github.com/bitly/go-nsq"
 	"github.com/drone/go-github/github"
 	"github.com/gorilla/mux"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"path"
-	"strconv"
 )
 
 var writer *nsq.Writer
 
-// handle pull request events
 func pullRequest(w http.ResponseWriter, r *http.Request) {
 	hook, err := github.ParsePullRequestHook([]byte(r.FormValue("payload")))
 	if err != nil {
@@ -36,35 +31,23 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handle all other events from the api
-func genericEvents(w http.ResponseWriter, r *http.Request) {
-	log.Printf("event=%s\n", r.Header.Get("X-Github-Event"))
-}
-
-// handle ping events from github api
 func ping(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusOK), http.StatusOK)
 }
 
-func main() {
-	// TODO: set host to filter pushes from random places
+func newRouter() *mux.Router {
 	r := mux.NewRouter()
+	r.Host("api.github.com")
+	r.HandleFunc("/", ping).Headers("X-Github-Event", "ping").Methods("POST")
+	r.HandleFunc("/", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST")
+	return r
+}
 
-	r.HandleFunc("/", ping).
-		Headers("X-Github-Event", "ping").
-		Methods("POST")
-
-	r.HandleFunc("/", pullRequest).
-		Headers("X-Github-Event", "pull_request").
-		Methods("POST")
-
-	r.HandleFunc("/", genericEvents).
-		Methods("POST")
-
+func main() {
 	writer = nsq.NewWriter(os.Getenv("NSQD"))
 	defer writer.Close()
 
-	if err := http.ListenAndServe(":80", r); err != nil {
+	if err := http.ListenAndServe(":80", newRouter()); err != nil {
 		log.Fatal(err)
 	}
 }
