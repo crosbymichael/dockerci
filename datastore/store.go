@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"errors"
 	"github.com/garyburd/redigo/redis"
 	"path"
 )
@@ -8,6 +9,10 @@ import (
 const (
 	DEFAULT_POOL_SIZE = 10 // Number of redis connections to keep in the pool
 	DEFAULT_TIMEOUT   = 0  // Defaults to 0 to block forever
+)
+
+var (
+	ErrKeyIsAlreadySet = errors.New("key is already set")
 )
 
 type Store struct {
@@ -24,6 +29,17 @@ func New(addr string) *Store {
 
 func (s *Store) Close() error {
 	return s.pool.Close()
+}
+
+func (s *Store) AtomicSaveState(repository, commit, state string) error {
+	isSet, err := redis.Int(s.do("SETNX", path.Join("/dockerci", repository, "commit", commit), state))
+	if err != nil {
+		return err
+	}
+	if isSet == 0 {
+		return ErrKeyIsAlreadySet
+	}
+	return nil
 }
 
 // SavePullRequest will save the raw json as a blob for a given repository
