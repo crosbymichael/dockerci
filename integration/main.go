@@ -9,6 +9,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 )
 
 type handler struct {
@@ -44,7 +46,7 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 }
 
 func checkout(temp string, pr *github.PullRequest) error {
-
+	return nil
 }
 
 func makeTest(temp string) ([]byte, error) {
@@ -63,7 +65,7 @@ func makeTest(temp string) ([]byte, error) {
 }
 
 func pushResults(pr *github.PullRequest, output []byte) error {
-
+	return nil
 }
 
 func main() {

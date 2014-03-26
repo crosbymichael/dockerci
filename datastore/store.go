@@ -42,19 +42,6 @@ func (s *Store) AtomicSaveState(repository, commit, state string) error {
 	return nil
 }
 
-// SavePullRequest will save the raw json as a blob for a given repository
-func (s *Store) SavePullRequest(repository, uuid string, blob []byte) error {
-	key := path.Join("/dockerci", repository, "pullrequest", uuid, "blob")
-	_, err := s.do("SET", key, blob)
-	return err
-}
-
-// FetchPullRequest will return the blog data for a given pull request uuid in a repository
-func (s *Store) FetchPullRequest(repository, uuid string) ([]byte, error) {
-	key := path.Join("/dockerci", repository, "pullrequest", uuid, "blob")
-	return redis.Bytes(s.do("GET", key))
-}
-
 func (s *Store) do(cmd string, args ...interface{}) (interface{}, error) {
 	conn := s.pool.Get()
 	defer conn.Close()
