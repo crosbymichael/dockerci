@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/bitly/go-nsq"
-	"github.com/crosbymichael/dockerci/datastore"
+	"github.com/crosbymichael/dockerci"
 	"github.com/drone/go-github/github"
 	"github.com/gorilla/mux"
 	"log"
@@ -13,7 +13,7 @@ import (
 
 var (
 	writer *nsq.Writer
-	store  *datastore.Store
+	store  *dockerci.Store
 )
 
 func pullRequest(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +26,7 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 	case "open", "synchronize":
 		// check that the commit for this PR is not already in the queue or processed
 		if err := store.AtomicSaveState(hook.Repo.Name, hook.PullRequest.Head.Sha, "pending"); err != nil {
-			if err == datastore.ErrKeyIsAlreadySet {
+			if err == dockerci.ErrKeyIsAlreadySet {
 				return
 			}
 			log.Fatal(err)
@@ -57,7 +57,7 @@ func newRouter() *mux.Router {
 
 func main() {
 	writer = nsq.NewWriter(os.Getenv("NSQD"))
-	store = datastore.New(os.Getenv("REDIS"))
+	store = dockerci.New(os.Getenv("REDIS"))
 	defer writer.Close()
 	defer store.Close()
 
