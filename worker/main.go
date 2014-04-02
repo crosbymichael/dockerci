@@ -43,17 +43,11 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 	if err := dockerci.Checkout(temp, pullrequest); err != nil {
 		return err
 	}
-
-	// run make test-integration
 	result, err := dockerci.MakeTest(temp, testMethod)
 	if err != nil {
 		return err
 	}
-
-	if err := pushResults(json, result); err != nil {
-		return err
-	}
-	return nil
+	return pushResults(json, result)
 }
 
 func pushResults(json *simplejson.Json, result *dockerci.Result) error {
@@ -69,27 +63,52 @@ func pushResults(json *simplejson.Json, result *dockerci.Result) error {
 	return nil
 }
 
-func main() {
+func validateConfiguration() {
 	if testMethod == "" {
 		log.Fatalln("TEST_METHOD cannot be empty provide (binary, cross, test, test-integration)")
 	}
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+}
 
-	log.Printf("method=%s\n", testMethod)
+func newReader() *nsq.Reader {
+	var (
+		nsqd       = os.Getenv("NSQD")
+		nsqlookupd = os.Getenv("NSQ_LOOKUPD")
+	)
 	reader, err := nsq.NewReader("builds", testMethod)
 	if err != nil {
 		log.Fatal(err)
 	}
-	store = dockerci.New(os.Getenv("REDIS"), os.Getenv("REDIS_AUTH"))
-	defer store.Close()
-
 	reader.AddHandler(&handler{})
 	reader.VerboseLogging = false
 
-	if err := reader.ConnectToNSQ(os.Getenv("NSQD")); err != nil {
-		log.Fatal(err)
+	switch {
+	case nsqd != "":
+		if err := reader.ConnectToNSQ(nsqd); err != nil {
+			log.Fatal(err)
+		}
+	case nsqlookupd != "":
+		if err := reader.ConnectToLookupd(nsqlookupd); err != nil {
+			log.Fatal(err)
+		}
+	default:
+		log.Fatal("you must specify NSQD or NSQ_LOOKUP env vars")
 	}
+	return reader
+}
+
+func main() {
+	validateConfiguration()
+	log.Printf("method=%s\n", testMethod)
+
+	var (
+		sigChan = make(chan os.Signal, 1)
+		reader  = newReader()
+	)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	store = dockerci.New(os.Getenv("REDIS"), os.Getenv("REDIS_AUTH"))
+	defer store.Close()
+
 	for {
 		select {
 		case <-reader.ExitChan:
