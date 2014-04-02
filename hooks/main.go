@@ -23,7 +23,7 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch hook.Action {
-	case "open", "synchronize":
+	case "opened", "synchronize":
 		// check that the commit for this PR is not already in the queue or processed
 		if err := store.AtomicSaveState(hook.Repo.Name, hook.PullRequest.Head.Sha, "pending"); err != nil {
 			if err == dockerci.ErrKeyIsAlreadySet {
