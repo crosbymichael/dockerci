@@ -1,10 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/bitly/go-nsq"
+	"github.com/bitly/go-simplejson"
 	"github.com/crosbymichael/dockerci"
-	"github.com/drone/go-github/github"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -17,30 +16,49 @@ var (
 )
 
 func pullRequest(w http.ResponseWriter, r *http.Request) {
-	hook, err := github.ParsePullRequestHook([]byte(r.FormValue("payload")))
+	rawPayload := []byte(r.FormValue("payload"))
+	json, err := simplejson.NewJson(rawPayload)
+	if err != nil {
+		log.Fatal(err)
+	}
+	action, err := json.Get("action").String()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	switch hook.Action {
+	switch action {
 	case "opened", "synchronize":
 		// check that the commit for this PR is not already in the queue or processed
-		if err := store.AtomicSaveState(hook.Repo.Name, hook.PullRequest.Head.Sha, "pending"); err != nil {
+		repoName, sha, err := getRepoNameAndSha(json)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := store.AtomicSaveState(repoName, sha, "pending"); err != nil {
 			if err == dockerci.ErrKeyIsAlreadySet {
 				return
 			}
 			log.Fatal(err)
 		}
-		data, err := json.Marshal(hook.PullRequest)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := writer.PublishAsync("builds", data, nil); err != nil {
+
+		if err := writer.PublishAsync("builds", rawPayload, nil); err != nil {
 			log.Fatal(err)
 		}
 	default:
-		log.Printf("event=%s action=%s\n", r.Header.Get("X-Github-Event"), hook.Action)
+		log.Printf("event=%s action=%s\n", r.Header.Get("X-Github-Event"), action)
 	}
+}
+
+func getRepoNameAndSha(json *simplejson.Json) (string, string, error) {
+	repo, pullrequest := json.Get("repository"), json.Get("pull_request")
+	repoName, err := repo.Get("name").String()
+	if err != nil {
+		return "", "", err
+	}
+	sha, err := pullrequest.Get("head").Get("sha").String()
+	if err != nil {
+		return "", "", err
+	}
+	return repoName, sha, nil
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {
