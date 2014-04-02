@@ -4,12 +4,19 @@ import (
 	"fmt"
 	"github.com/bitly/go-nsq"
 	"github.com/bitly/go-simplejson"
+	"github.com/crosbymichael/dockerci"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"syscall"
+)
+
+var (
+	// binary, cross, test, test-integration
+	testMethod = os.Getenv("TEST_METHOD")
+	store      *dockerci.Store
 )
 
 type handler struct {
@@ -39,12 +46,12 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 	}
 
 	// run make test-integration
-	output, err := makeTest(temp)
+	success, output, err := makeTest(temp)
 	if err != nil {
 		return err
 	}
 
-	if err := pushResults(pullrequest, output); err != nil {
+	if err := pushResults(json, success, output); err != nil {
 		return err
 	}
 	return nil
@@ -91,8 +98,11 @@ func checkout(temp string, pr *simplejson.Json) error {
 	return nil
 }
 
-func makeTest(temp string) ([]byte, error) {
-	cmd := exec.Command("make", "binary") // just testing binary for now
+func makeTest(temp string) (bool, []byte, error) {
+	var (
+		cmd     = exec.Command("make", testMethod)
+		success = false
+	)
 	cmd.Dir = temp
 
 	output, err := cmd.CombinedOutput()
@@ -100,25 +110,62 @@ func makeTest(temp string) ([]byte, error) {
 		// it's ok for the make command to return a non-zero exit
 		// incase of a failed build
 		if _, ok := err.(*exec.ExitError); !ok {
-			return output, err
+			return success, output, err
 		}
+		success = false
+	} else {
+		success = true
 	}
-	return output, nil
+	return success, output, nil
 }
 
-func pushResults(pr *simplejson.Json, output []byte) error {
+func pushResults(json *simplejson.Json, success bool, output []byte) error {
+	log.Printf("size=%d success=%v\n", len(output), success)
+
+	repoName, sha, err := getRepoNameAndSha(json)
+	if err != nil {
+		return err
+	}
+	state := "failed"
+	if success {
+		state = "passed"
+	}
+	if err := store.SaveState(repoName, sha, state); err != nil {
+		return err
+	}
+	if err := store.SaveOutput(repoName, sha, output); err != nil {
+		return err
+	}
 	return nil
+}
+
+func getRepoNameAndSha(json *simplejson.Json) (string, string, error) {
+	repo, pullrequest := json.Get("repository"), json.Get("pull_request")
+	repoName, err := repo.Get("name").String()
+	if err != nil {
+		return "", "", err
+	}
+	sha, err := pullrequest.Get("head").Get("sha").String()
+	if err != nil {
+		return "", "", err
+	}
+	return repoName, sha, nil
 }
 
 func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	reader, err := nsq.NewReader("builds", "binary")
+	log.Printf("method=%s\n", testMethod)
+	reader, err := nsq.NewReader("builds", testMethod)
 	if err != nil {
 		log.Fatal(err)
 	}
+	store = dockerci.New(os.Getenv("REDIS"))
+	defer store.Close()
+
 	reader.AddHandler(&handler{})
+	reader.VerboseLogging = false
 
 	if err := reader.ConnectToNSQ(os.Getenv("NSQD")); err != nil {
 		log.Fatal(err)

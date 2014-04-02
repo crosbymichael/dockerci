@@ -32,12 +32,26 @@ func (s *Store) Close() error {
 }
 
 func (s *Store) AtomicSaveState(repository, commit, state string) error {
-	isSet, err := redis.Int(s.do("SETNX", path.Join("/dockerci", repository, "commit", commit), state))
+	isSet, err := redis.Int(s.do("SETNX", stateKey(repository, commit), state))
 	if err != nil {
 		return err
 	}
 	if isSet == 0 {
 		return ErrKeyIsAlreadySet
+	}
+	return nil
+}
+
+func (s *Store) SaveState(repository, commit, state string) error {
+	if _, err := s.do("SET", stateKey(repository, commit), state); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Store) SaveOutput(repository, commit string, output []byte) error {
+	if _, err := s.do("SET", outputKey(repository, commit), output); err != nil {
+		return err
 	}
 	return nil
 }
@@ -52,4 +66,12 @@ func newPool(addr string) *redis.Pool {
 	return redis.NewPool(func() (redis.Conn, error) {
 		return redis.Dial("tcp", addr)
 	}, DEFAULT_POOL_SIZE)
+}
+
+func stateKey(repository, commit string) string {
+	return path.Join("/dockerci", repository, "commit", commit, "state")
+}
+
+func outputKey(repository, commit string) string {
+	return path.Join("/dockerci", repository, "commit", commit, "output")
 }
