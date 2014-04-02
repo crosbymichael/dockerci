@@ -44,6 +44,7 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {
+	log.Printf("event=ping\n")
 	http.Error(w, http.StatusText(http.StatusOK), http.StatusOK)
 }
 
