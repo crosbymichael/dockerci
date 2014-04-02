@@ -1,6 +1,6 @@
 FROM crosbymichael/golang
 
-RUN apt-get update && apt-get install -y mercurial
+RUN apt-get update && apt-get install -y mercurial make
 
 RUN go get -d github.com/crosbymichael/dockerci && \
     go get github.com/bitly/go-nsq && \
@@ -12,6 +12,6 @@ RUN cd /go/src/github.com/crosbymichael/dockerci && go install . ./...
 ENV PATH $PATH:/go/bin
 
 # make git happy
-RUN git config --global user.name dockerci && git config --global user.email dockerci@example.com
-
-RUN ln -s /.dockerinit /usr/bin/docker
+RUN git config --global user.name dockerci && \
+    git config --global user.email dockerci@example.com && \
+    ln -s /.dockerinit /usr/bin/docker
