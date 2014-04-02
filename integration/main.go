@@ -57,7 +57,7 @@ func checkout(temp string, pr *simplejson.Json) error {
 	if err != nil {
 		return err
 	}
-	url, err := base.Get("repo").Get("url").String()
+	url, err := base.Get("repo").Get("clone_url").String()
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func checkout(temp string, pr *simplejson.Json) error {
 	}
 
 	head := pr.Get("head")
-	url, err = head.Get("repo").Get("url").String()
+	url, err = head.Get("repo").Get("clone_url").String()
 	if err != nil {
 		return err
 	}
