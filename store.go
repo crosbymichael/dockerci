@@ -42,15 +42,27 @@ func (s *Store) AtomicSaveState(repository, commit, state string) error {
 	return nil
 }
 
-func (s *Store) SaveState(repository, commit, state string) error {
-	if _, err := s.do("SET", stateKey(repository, commit), state); err != nil {
+func (s *Store) SaveBuildResult(repository, commit string, data map[string]string) error {
+	// set the top level state field to done now that the build is complete
+	conn := s.pool.Get()
+	defer conn.Close()
+
+	if err := conn.Send("MULTI"); err != nil {
 		return err
 	}
-	return nil
-}
-
-func (s *Store) SaveOutput(repository, commit string, output []byte) error {
-	if _, err := s.do("SET", outputKey(repository, commit), output); err != nil {
+	if err := conn.Send("SET", stateKey(repository, commit), "complete"); err != nil {
+		return err
+	}
+	args := []interface{}{
+		resultKey(repository, commit),
+	}
+	for k, v := range data {
+		args = append(args, k, v)
+	}
+	if err := conn.Send("HMSET", args...); err != nil {
+		return err
+	}
+	if _, err := conn.Do("EXEC"); err != nil {
 		return err
 	}
 	return nil
@@ -81,6 +93,6 @@ func stateKey(repository, commit string) string {
 	return path.Join("/dockerci", repository, "commit", commit, "state")
 }
 
-func outputKey(repository, commit string) string {
-	return path.Join("/dockerci", repository, "commit", commit, "output")
+func resultKey(repository, commit string) string {
+	return path.Join("/dockerci", repository, "commit", commit, "results")
 }

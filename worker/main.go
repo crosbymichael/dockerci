@@ -126,14 +126,19 @@ func pushResults(json *simplejson.Json, success bool, output []byte) error {
 	if err != nil {
 		return err
 	}
-	state := "failed"
+	var (
+		stateKey = fmt.Sprintf("method-%s", testMethod)
+		data     = map[string]string{
+			fmt.Sprintf("%s-output", stateKey): string(output),
+			fmt.Sprintf("%s-result", stateKey): "failed",
+		}
+	)
+
 	if success {
-		state = "passed"
+		data[fmt.Sprintf("%s-result", stateKey)] = "passed"
 	}
-	if err := store.SaveState(repoName, sha, state); err != nil {
-		return err
-	}
-	if err := store.SaveOutput(repoName, sha, output); err != nil {
+
+	if err := store.SaveBuildResult(repoName, sha, data); err != nil {
 		return err
 	}
 	return nil
