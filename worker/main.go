@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"os/signal"
 	"syscall"
 )
@@ -41,104 +40,30 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 	}
 	defer os.RemoveAll(temp)
 
-	if err := checkout(temp, pullrequest); err != nil {
+	if err := dockerci.Checkout(temp, pullrequest); err != nil {
 		return err
 	}
 
 	// run make test-integration
-	success, output, err := makeTest(temp)
+	result, err := dockerci.MakeTest(temp, testMethod)
 	if err != nil {
 		return err
 	}
 
-	if err := pushResults(json, success, output); err != nil {
+	if err := pushResults(json, result); err != nil {
 		return err
 	}
 	return nil
 }
 
-func checkout(temp string, pr *simplejson.Json) error {
-	// git clone -qb master https://github.com/upstream/docker.git our-temp-directory
-	base := pr.Get("base")
-	ref, err := base.Get("ref").String()
-	if err != nil {
-		return err
-	}
-	url, err := base.Get("repo").Get("clone_url").String()
-	if err != nil {
-		return err
-	}
-	log.Printf("ref=%s url=%s\n", ref, url)
-
-	cmd := exec.Command("git", "clone", "-qb", ref, url, temp)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Println(string(output))
-		return err
-	}
-
-	head := pr.Get("head")
-	url, err = head.Get("repo").Get("clone_url").String()
-	if err != nil {
-		return err
-	}
-	ref, err = head.Get("ref").String()
-	if err != nil {
-		return err
-	}
-	log.Printf("ref=%s url=%s\n", ref, url)
-	// cd our-temp-directory && git pull -q https://github.com/some-user/docker.git some-feature-branch
-	cmd = exec.Command("git", "pull", "-q", url, ref)
-	cmd.Dir = temp
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		log.Println(string(output))
-		return err
-	}
-	return nil
-}
-
-func makeTest(temp string) (bool, []byte, error) {
-	var (
-		cmd     = exec.Command("make", testMethod)
-		success = false
-	)
-	cmd.Dir = temp
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// it's ok for the make command to return a non-zero exit
-		// incase of a failed build
-		if _, ok := err.(*exec.ExitError); !ok {
-			return success, output, err
-		}
-		success = false
-	} else {
-		success = true
-	}
-	return success, output, nil
-}
-
-func pushResults(json *simplejson.Json, success bool, output []byte) error {
-	log.Printf("size=%d success=%v\n", len(output), success)
+func pushResults(json *simplejson.Json, result *dockerci.Result) error {
+	log.Printf("size=%d success=%v\n", len(result.Output), result.Success)
 
 	repoName, sha, err := dockerci.GetRepoNameAndSha(json)
 	if err != nil {
 		return err
 	}
-	var (
-		stateKey = fmt.Sprintf("method-%s", testMethod)
-		data     = map[string]string{
-			fmt.Sprintf("%s-output", stateKey): string(output),
-			fmt.Sprintf("%s-result", stateKey): "failed",
-		}
-	)
-
-	if success {
-		data[fmt.Sprintf("%s-result", stateKey)] = "passed"
-	}
-
-	if err := store.SaveBuildResult(repoName, sha, data); err != nil {
+	if err := store.SaveBuildResult(repoName, sha, result.ToData()); err != nil {
 		return err
 	}
 	return nil
