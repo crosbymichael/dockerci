@@ -30,7 +30,7 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 	switch action {
 	case "opened", "synchronize":
 		// check that the commit for this PR is not already in the queue or processed
-		repoName, sha, err := getRepoNameAndSha(json)
+		repoName, sha, err := dockerci.GetRepoNameAndSha(json)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -45,19 +45,6 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 	}
-}
-
-func getRepoNameAndSha(json *simplejson.Json) (string, string, error) {
-	repo, pullrequest := json.Get("repository"), json.Get("pull_request")
-	repoName, err := repo.Get("name").String()
-	if err != nil {
-		return "", "", err
-	}
-	sha, err := pullrequest.Get("head").Get("sha").String()
-	if err != nil {
-		return "", "", err
-	}
-	return repoName, sha, nil
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {

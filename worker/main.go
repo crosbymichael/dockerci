@@ -122,7 +122,7 @@ func makeTest(temp string) (bool, []byte, error) {
 func pushResults(json *simplejson.Json, success bool, output []byte) error {
 	log.Printf("size=%d success=%v\n", len(output), success)
 
-	repoName, sha, err := getRepoNameAndSha(json)
+	repoName, sha, err := dockerci.GetRepoNameAndSha(json)
 	if err != nil {
 		return err
 	}
@@ -142,19 +142,6 @@ func pushResults(json *simplejson.Json, success bool, output []byte) error {
 		return err
 	}
 	return nil
-}
-
-func getRepoNameAndSha(json *simplejson.Json) (string, string, error) {
-	repo, pullrequest := json.Get("repository"), json.Get("pull_request")
-	repoName, err := repo.Get("name").String()
-	if err != nil {
-		return "", "", err
-	}
-	sha, err := pullrequest.Get("head").Get("sha").String()
-	if err != nil {
-		return "", "", err
-	}
-	return repoName, sha, nil
 }
 
 func main() {
