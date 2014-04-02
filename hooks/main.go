@@ -50,6 +50,10 @@ func processAction(action string, json *simplejson.Json, rawPayload []byte) erro
 	if err != nil {
 		return err
 	}
+	number, err := json.Get("number").Int()
+	if err != nil {
+		return err
+	}
 	if err := store.IncrementRequest(action); err != nil {
 		return err
 	}
@@ -61,6 +65,9 @@ func processAction(action string, json *simplejson.Json, rawPayload []byte) erro
 			if err == dockerci.ErrKeyIsAlreadySet {
 				return nil
 			}
+			return err
+		}
+		if err := store.SaveCommitForPullRequest(number, sha); err != nil {
 			return err
 		}
 		if err := writer.PublishAsync("builds", rawPayload, nil); err != nil {

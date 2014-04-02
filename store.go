@@ -2,6 +2,7 @@ package dockerci
 
 import (
 	"errors"
+	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"path"
 )
@@ -82,6 +83,14 @@ func (s *Store) SaveMessageDuration(queue string, secounds float64) error {
 	return nil
 }
 
+// SaveCommitForPullRequest saves the commit to the pr number in a set
+func (s *Store) SaveCommitForPullRequest(number int, commit string) error {
+	if _, err := s.do("SADD", prKey(number), commit); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Store) do(cmd string, args ...interface{}) (interface{}, error) {
 	conn := s.pool.Get()
 	defer conn.Close()
@@ -105,6 +114,10 @@ func newPool(addr, password string) *redis.Pool {
 
 func stateKey(commit string) string {
 	return path.Join("/dockerci", "commit", commit, "state")
+}
+
+func prKey(number int) string {
+	return path.Join("/dockerci", "pullrequests", fmt.Sprint(number))
 }
 
 func resultKey(commit string) string {
