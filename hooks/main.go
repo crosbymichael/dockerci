@@ -85,8 +85,8 @@ func ping(w http.ResponseWriter, r *http.Request) {
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.Host("api.github.com")
-	r.HandleFunc("/", ping).Headers("X-Github-Event", "ping").Methods("POST")
-	r.HandleFunc("/", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST")
+	r.HandleFunc("/github", ping).Headers("X-Github-Event", "ping").Methods("POST")
+	r.HandleFunc("/github", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST")
 	return r
 }
 
