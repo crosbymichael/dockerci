@@ -16,35 +16,55 @@ var (
 )
 
 func pullRequest(w http.ResponseWriter, r *http.Request) {
+	var (
+		rawPayload, json = getPayloadAndJson(r)
+		action           = getAction(json)
+	)
+
+	log.Printf("event=%s action=%s\n", r.Header.Get("X-Github-Event"), action)
+	if err := processAction(action, json, rawPayload); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func getPayloadAndJson(r *http.Request) ([]byte, *simplejson.Json) {
 	rawPayload := []byte(r.FormValue("payload"))
+
 	json, err := simplejson.NewJson(rawPayload)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return rawPayload, json
+}
+
+func getAction(json *simplejson.Json) string {
 	action, err := json.Get("action").String()
 	if err != nil {
 		log.Fatal(err)
 	}
+	return action
+}
 
-	log.Printf("event=%s action=%s\n", r.Header.Get("X-Github-Event"), action)
+func processAction(action string, json *simplejson.Json, rawPayload []byte) error {
 	switch action {
 	case "opened", "synchronize":
 		// check that the commit for this PR is not already in the queue or processed
 		repoName, sha, err := dockerci.GetRepoNameAndSha(json)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		if err := store.AtomicSaveState(repoName, sha, "pending"); err != nil {
 			if err == dockerci.ErrKeyIsAlreadySet {
-				return
+				return nil
 			}
-			log.Fatal(err)
+			return err
 		}
 
 		if err := writer.PublishAsync("builds", rawPayload, nil); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+	return nil
 }
 
 func ping(w http.ResponseWriter, r *http.Request) {
