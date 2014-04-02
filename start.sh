@@ -2,9 +2,9 @@
 
 echo 'starting bootstrap of your docker ci sytem'
 
-REDIS=redis.prod.docker:6379
-NSQD=nsqd.prod.docker:5150
-NSQ_LOOKUPD=nsqlookupd.prod.docker:4161
+export REDIS=redis.prod.docker:6379
+export NSQD=nsqd.prod.docker:5150
+export NSQ_LOOKUPD=nsqlookupd.prod.docker:4161
 
 echo 'pulling down images...'
 
@@ -48,5 +48,5 @@ docker run --name redis1 -d crosbymichael/redis
 echo 'starting hooks and workers...'
 docker run --name hooks1 -d -e REDIS -e NSQD crosbymichael/dockerci hooks
 
-docker run --name worker-binary -v /var/run/docker.sock:/var/run/docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=binary crosbymichael/dockerci worker
-docker run --name worker-cross -v /var/run/docker.sock:/var/run/docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=cross crosbymichael/dockerci worker
+docker run --name worker-binary -d -v /var/run/docker.sock:/var/run/docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=binary crosbymichael/dockerci worker
+docker run --name worker-cross -d -v /var/run/docker.sock:/var/run/docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=cross crosbymichael/dockerci worker
