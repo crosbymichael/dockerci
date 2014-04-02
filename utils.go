@@ -5,6 +5,7 @@ import (
 	"github.com/bitly/go-simplejson"
 	"log"
 	"os/exec"
+	"time"
 )
 
 type Result struct {
@@ -102,4 +103,9 @@ func MakeTest(temp, method string) (*Result, error) {
 	result.Output = string(output)
 
 	return result, nil
+}
+
+func LogTime(store *Store, queue string, started time.Time) {
+	duration := time.Now().Sub(started)
+	store.SaveMessageDuration(queue, duration.Seconds())
 }

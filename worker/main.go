@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var (
@@ -22,6 +23,8 @@ type handler struct {
 }
 
 func (h *handler) HandleMessage(msg *nsq.Message) error {
+	defer dockerci.LogTime(store, "build", time.Now())
+
 	json, err := simplejson.NewJson(msg.Body)
 	if err != nil {
 		return err

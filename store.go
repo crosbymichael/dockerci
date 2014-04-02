@@ -68,6 +68,20 @@ func (s *Store) SaveBuildResult(repository, commit string, data map[string]strin
 	return nil
 }
 
+func (s *Store) IncrementRequest(repository, action string) error {
+	if _, err := s.do("INCR", path.Join("/dockerci", repository, "stats", action, "count")); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Store) SaveMessageDuration(queue string, secounds float64) error {
+	if _, err := s.do("RPUSH", path.Join("/dockerci", "message-duration", queue), secounds); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Store) do(cmd string, args ...interface{}) (interface{}, error) {
 	conn := s.pool.Get()
 	defer conn.Close()
