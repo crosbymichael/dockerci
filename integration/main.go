@@ -1,10 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/bitly/go-nsq"
-	"github.com/drone/go-github/github"
+	"github.com/bitly/go-simplejson"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,19 +16,25 @@ type handler struct {
 }
 
 func (h *handler) HandleMessage(msg *nsq.Message) error {
-	var pr *github.PullRequest
-	if err := json.Unmarshal(msg.Body, &pr); err != nil {
+	json, err := simplejson.NewJson(msg.Body)
+	if err != nil {
+		return err
+	}
+	pullrequest := json.Get("pull_request")
+
+	number, err := pullrequest.Get("number").Int()
+	if err != nil {
 		return err
 	}
 
 	// checkout the code in a temp dir
-	temp, err := ioutil.TempDir("", fmt.Sprintf("pr-%d", pr.Number))
+	temp, err := ioutil.TempDir("", fmt.Sprintf("pr-%d", number))
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(temp)
 
-	if err := checkout(temp, pr); err != nil {
+	if err := checkout(temp, pullrequest); err != nil {
 		return err
 	}
 
@@ -39,23 +44,44 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 		return err
 	}
 
-	if err := pushResults(pr, output); err != nil {
+	if err := pushResults(pullrequest, output); err != nil {
 		return err
 	}
 	return nil
 }
 
-func checkout(temp string, pr *github.PullRequest) error {
+func checkout(temp string, pr *simplejson.Json) error {
 	// git clone -qb master https://github.com/upstream/docker.git our-temp-directory
-	cmd := exec.Command("git", "clone", "-qb", pr.Base.Ref, pr.Base.Repo.Url, temp)
+	base := pr.Get("base")
+	ref, err := base.Get("ref").String()
+	if err != nil {
+		return err
+	}
+	url, err := base.Get("repo").Get("url").String()
+	if err != nil {
+		return err
+	}
+	log.Printf("ref=%s url=%s\n", ref, url)
+
+	cmd := exec.Command("git", "clone", "-qb", ref, url, temp)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Println(string(output))
 		return err
 	}
 
+	head := pr.Get("head")
+	url, err = head.Get("repo").Get("url").String()
+	if err != nil {
+		return err
+	}
+	ref, err = head.Get("ref").String()
+	if err != nil {
+		return err
+	}
+	log.Printf("ref=%s url=%s\n", ref, url)
 	// cd our-temp-directory && git pull -q https://github.com/some-user/docker.git some-feature-branch
-	cmd = exec.Command("git", "pull", "-q", pr.Head.Repo.Url, pr.Head.Ref)
+	cmd = exec.Command("git", "pull", "-q", url, ref)
 	cmd.Dir = temp
 	output, err = cmd.CombinedOutput()
 	if err != nil {
@@ -80,7 +106,7 @@ func makeTest(temp string) ([]byte, error) {
 	return output, nil
 }
 
-func pushResults(pr *github.PullRequest, output []byte) error {
+func pushResults(pr *simplejson.Json, output []byte) error {
 	return nil
 }
 
