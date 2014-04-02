@@ -32,6 +32,8 @@ sleep 2
 echo 'starting hipache and setting up routes...'
 docker run --name hipache1 -d -p 80:80 crosbymichael/hipache
 
+sleep 2
+
 docker run --rm -i crosbymichael/redis-cli -h hipache.prod.docker rpush frontend:ci.docker.io hooks
 docker run --rm -i crosbymichael/redis-cli -h hipache.prod.docker rpush frontend:ci.docker.io http://hooks1.dockerci.prod.docker
 
