@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo 'starting bootstrap of your docker ci sytem'
+echo 'starting bootstrap of your docker ci system'
 
 export REDIS=redis.prod.docker:6379
 export NSQD=nsqd.prod.docker:5150
