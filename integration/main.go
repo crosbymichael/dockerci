@@ -89,13 +89,13 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	reader, err := nsq.NewReader("builds", "integration")
+	reader, err := nsq.NewReader("builds", "binary")
 	if err != nil {
 		log.Fatal(err)
 	}
 	reader.AddHandler(&handler{})
 
-	if err := reader.ConnectToLookupd(os.Getenv("NSQ_LOOKUPD")); err != nil {
+	if err := reader.ConnectToNSQ(os.Getenv("NSQD")); err != nil {
 		log.Fatal(err)
 	}
 	for {
