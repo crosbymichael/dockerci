@@ -11,5 +11,5 @@ docker run --name hooks1 -d -e REDIS_AUTH=TBpHXFAna3pANGyV2afF -e REDIS=redis.pr
 echo 'you probably want to put this into hipache'
 
 # start a worker
-# docker run -v /var/run/docker.sock:/var/run/docker.sock -e REDIS_AUTH=TBpHXFAna3pANGyV2afF -e REDIS=redis.prod.docker:6379 -e NSQD=nsqd.prod.docker:4150 -e TEST_METHOD=binary crosbymichael/dockerci integration
+docker run -v /var/run/docker.sock:/var/run/docker.sock -e REDIS_AUTH=TBpHXFAna3pANGyV2afF -e REDIS=redis.prod.docker:6379 -e NSQD=nsqd.prod.docker:4150 -e TEST_METHOD=binary crosbymichael/dockerci worker
 

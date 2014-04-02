@@ -153,6 +153,9 @@ func getRepoNameAndSha(json *simplejson.Json) (string, string, error) {
 }
 
 func main() {
+	if testMethod == "" {
+		log.Fatalln("TEST_METHOD cannot be empty provide (binary, cross, test, test-integration)")
+	}
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 

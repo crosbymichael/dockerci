@@ -26,6 +26,7 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
+	log.Printf("event=%s action=%s\n", r.Header.Get("X-Github-Event"), action)
 	switch action {
 	case "opened", "synchronize":
 		// check that the commit for this PR is not already in the queue or processed
@@ -43,8 +44,6 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 		if err := writer.PublishAsync("builds", rawPayload, nil); err != nil {
 			log.Fatal(err)
 		}
-	default:
-		log.Printf("event=%s action=%s\n", r.Header.Get("X-Github-Event"), action)
 	}
 }
 
