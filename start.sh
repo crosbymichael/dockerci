@@ -2,7 +2,7 @@
 
 echo 'you need to have skydock running with env as "prod"'
 
-docker run --name nsqd1 -d crosbymichael/nsqd -broadcast-address nsqd1.nsqd.prod.docker 
+docker run --name nsqd1 -d crosbymichael/nsqd -broadcast-address nsqd1.nsqd.prod.docker -msg-timeout="300s"
 docker run --name nsqadmin1 -d crosbymichael/nsqadmin -nsqd-http-address nsqd.prod.docker:4151
 
 docker run --name redis1 -d crosbymichael/redis
