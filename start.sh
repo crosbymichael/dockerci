@@ -33,7 +33,7 @@ echo 'starting hipache and setting up routes...'
 docker run --name hipache1 -d -p 80:80 crosbymichael/hipache
 
 docker run --rm -i crosbymichael/redis-cli -h hipache.prod.docker rpush frontend:ci.docker.io hooks
-docker run --rm -i crosbymichael/redis-cli -h hipache.prod.docker rpush frontend:ci.docker.io http://hooks.prod.docker
+docker run --rm -i crosbymichael/redis-cli -h hipache.prod.docker rpush frontend:ci.docker.io http://hooks1.dockerci.prod.docker
 
 docker run --rm -i crosbymichael/redis-cli -h hipache.prod.docker rpush frontend:nsqadmin.docker.io nsqadmin
 docker run --rm -i crosbymichael/redis-cli -h hipache.prod.docker rpush frontend:nsqadmin.docker.io http://nsqadmin.prod.docker
