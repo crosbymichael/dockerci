@@ -9,3 +9,4 @@ RUN go get -d github.com/crosbymichael/dockerci && \
 
 ADD . /go/src/github.com/crosbymichael/dockerci
 RUN cd /go/src/github.com/crosbymichael/dockerci && go install . ./...
+ENV PATH $PATH:/go/bin
