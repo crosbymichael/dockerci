@@ -21,9 +21,9 @@ type Store struct {
 
 // New returns a new Store with a redis pool for the
 // given address
-func New(addr string) *Store {
+func New(addr, password string) *Store {
 	return &Store{
-		pool: newPool(addr),
+		pool: newPool(addr, password),
 	}
 }
 
@@ -62,9 +62,18 @@ func (s *Store) do(cmd string, args ...interface{}) (interface{}, error) {
 	return conn.Do(cmd, args...)
 }
 
-func newPool(addr string) *redis.Pool {
+func newPool(addr, password string) *redis.Pool {
 	return redis.NewPool(func() (redis.Conn, error) {
-		return redis.Dial("tcp", addr)
+		c, err := redis.Dial("tcp", addr)
+		if err != nil {
+			return nil, err
+		}
+		if password != "" {
+			if _, err := c.Do("AUTH", password); err != nil {
+				return nil, err
+			}
+		}
+		return c, nil
 	}, DEFAULT_POOL_SIZE)
 }
 

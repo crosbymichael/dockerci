@@ -161,7 +161,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	store = dockerci.New(os.Getenv("REDIS"))
+	store = dockerci.New(os.Getenv("REDIS"), os.Getenv("REDIS_AUTH"))
 	defer store.Close()
 
 	reader.AddHandler(&handler{})
