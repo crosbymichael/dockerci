@@ -58,7 +58,6 @@ func newRouter() *mux.Router {
 func main() {
 	writer = nsq.NewWriter(os.Getenv("NSQD"))
 	store = dockerci.New(os.Getenv("REDIS"))
-	defer writer.Close()
 	defer store.Close()
 
 	if err := http.ListenAndServe(":80", newRouter()); err != nil {
