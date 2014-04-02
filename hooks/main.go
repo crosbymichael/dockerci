@@ -46,18 +46,18 @@ func getAction(json *simplejson.Json) string {
 }
 
 func processAction(action string, json *simplejson.Json, rawPayload []byte) error {
-	repoName, sha, err := dockerci.GetRepoNameAndSha(json)
+	sha, err := dockerci.GetSha(json)
 	if err != nil {
 		return err
 	}
-	if err := store.IncrementRequest(repoName, action); err != nil {
+	if err := store.IncrementRequest(action); err != nil {
 		return err
 	}
 
 	switch action {
 	case "opened", "synchronize":
 		// check that the commit for this PR is not already in the queue or processed
-		if err := store.AtomicSaveState(repoName, sha, "pending"); err != nil {
+		if err := store.AtomicSaveState(sha, "pending"); err != nil {
 			if err == dockerci.ErrKeyIsAlreadySet {
 				return nil
 			}

@@ -56,11 +56,11 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 func pushResults(json *simplejson.Json, result *dockerci.Result) error {
 	log.Printf("size=%d success=%v\n", len(result.Output), result.Success)
 
-	repoName, sha, err := dockerci.GetRepoNameAndSha(json)
+	sha, err := dockerci.GetSha(json)
 	if err != nil {
 		return err
 	}
-	if err := store.SaveBuildResult(repoName, sha, result.ToData()); err != nil {
+	if err := store.SaveBuildResult(sha, result.ToData()); err != nil {
 		return err
 	}
 	return nil

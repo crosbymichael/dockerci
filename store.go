@@ -31,8 +31,8 @@ func (s *Store) Close() error {
 	return s.pool.Close()
 }
 
-func (s *Store) AtomicSaveState(repository, commit, state string) error {
-	isSet, err := redis.Int(s.do("SETNX", stateKey(repository, commit), state))
+func (s *Store) AtomicSaveState(commit, state string) error {
+	isSet, err := redis.Int(s.do("SETNX", stateKey(commit), state))
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (s *Store) AtomicSaveState(repository, commit, state string) error {
 	return nil
 }
 
-func (s *Store) SaveBuildResult(repository, commit string, data map[string]string) error {
+func (s *Store) SaveBuildResult(commit string, data map[string]string) error {
 	// set the top level state field to done now that the build is complete
 	conn := s.pool.Get()
 	defer conn.Close()
@@ -50,11 +50,11 @@ func (s *Store) SaveBuildResult(repository, commit string, data map[string]strin
 	if err := conn.Send("MULTI"); err != nil {
 		return err
 	}
-	if err := conn.Send("SET", stateKey(repository, commit), "complete"); err != nil {
+	if err := conn.Send("SET", stateKey(commit), "complete"); err != nil {
 		return err
 	}
 	args := []interface{}{
-		resultKey(repository, commit),
+		resultKey(commit),
 	}
 	for k, v := range data {
 		args = append(args, k, v)
@@ -68,8 +68,8 @@ func (s *Store) SaveBuildResult(repository, commit string, data map[string]strin
 	return nil
 }
 
-func (s *Store) IncrementRequest(repository, action string) error {
-	if _, err := s.do("INCR", path.Join("/dockerci", repository, "stats", action, "count")); err != nil {
+func (s *Store) IncrementRequest(action string) error {
+	if _, err := s.do("INCR", path.Join("/dockerci", "stats", action, "count")); err != nil {
 		return err
 	}
 	return nil
@@ -103,10 +103,10 @@ func newPool(addr, password string) *redis.Pool {
 	}, DEFAULT_POOL_SIZE)
 }
 
-func stateKey(repository, commit string) string {
-	return path.Join("/dockerci", repository, "commit", commit, "state")
+func stateKey(commit string) string {
+	return path.Join("/dockerci", "commit", commit, "state")
 }
 
-func resultKey(repository, commit string) string {
-	return path.Join("/dockerci", repository, "commit", commit, "results")
+func resultKey(commit string) string {
+	return path.Join("/dockerci", "commit", commit, "result")
 }

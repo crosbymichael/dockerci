@@ -29,17 +29,12 @@ func (r *Result) ToData() map[string]string {
 	return data
 }
 
-func GetRepoNameAndSha(json *simplejson.Json) (string, string, error) {
-	repo, pullrequest := json.Get("repository"), json.Get("pull_request")
-	repoName, err := repo.Get("name").String()
+func GetSha(json *simplejson.Json) (string, error) {
+	sha, err := json.Get("pull_request").Get("head").Get("sha").String()
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-	sha, err := pullrequest.Get("head").Get("sha").String()
-	if err != nil {
-		return "", "", err
-	}
-	return repoName, sha, nil
+	return sha, nil
 }
 
 func Checkout(temp string, json *simplejson.Json) error {
