@@ -46,23 +46,22 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 }
 
 func checkout(temp string, pr *github.PullRequest) error {
-	// TODO decide whether to do something with the output from these calls
-
 	// git clone -qb master https://github.com/upstream/docker.git our-temp-directory
 	cmd := exec.Command("git", "clone", "-qb", pr.Base.Ref, pr.Base.Repo.Url, temp)
-	_, err := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Println(string(output))
 		return err
 	}
 
 	// cd our-temp-directory && git pull -q https://github.com/some-user/docker.git some-feature-branch
 	cmd = exec.Command("git", "pull", "-q", pr.Head.Repo.Url, pr.Head.Ref)
 	cmd.Dir = temp
-	_, err = cmd.CombinedOutput()
+	output, err = cmd.CombinedOutput()
 	if err != nil {
+		log.Println(string(output))
 		return err
 	}
-
 	return nil
 }
 
