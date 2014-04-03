@@ -82,9 +82,14 @@ func ping(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusOK), http.StatusOK)
 }
 
+func githubCatchall(w http.ResponseWriter, r *http.Request) {
+	log.Printf("event=%s\n", r.Header.Get("X-Github-Event"))
+}
+
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/github", ping).Headers("X-Github-Event", "ping").Methods("POST")
+	r.HandleFunc("/github", githubCatchall).Methods("POST").Host("api.github.com")
 	r.HandleFunc("/github", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST").Host("api.github.com")
 	return r
 }
