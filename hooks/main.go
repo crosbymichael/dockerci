@@ -99,9 +99,9 @@ func githubCatchall(w http.ResponseWriter, r *http.Request) {
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/github", githubCatchall).Methods("POST")
-	r.HandleFunc("/github", ping).Headers("X-Github-Event", "ping").Methods("POST")
 	r.HandleFunc("/github", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST")
+	r.HandleFunc("/github", ping).Headers("X-Github-Event", "ping").Methods("POST")
+	r.HandleFunc("/github", githubCatchall).Methods("POST")
 	return r
 }
 
