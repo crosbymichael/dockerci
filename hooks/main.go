@@ -23,12 +23,18 @@ var (
 	}
 )
 
-func pullRequest(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.Header.Get("x-real-ip"), ":")
+func isValidSource(r *http.Request) bool {
+	parts := strings.Split(r.Header.Get("X-REAL-IP"), ":")
 	if !validGithubIPs[parts[0]] {
 		log.Printf("reject=true ip=%s\n", parts[0])
+		return false
+	}
+	return true
+}
+
+func pullRequest(w http.ResponseWriter, r *http.Request) {
+	if !isValidSource(r) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
 	}
 	var (
 		rawPayload, json = getPayloadAndJson(r)
