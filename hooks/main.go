@@ -18,11 +18,13 @@ var (
 		"207.97.227.253":  true,
 		"50.57.128.197":   true,
 		"108.171.174.178": true,
+		"50.57.231.61":    true,
+		"204.232.175.64":  true,
 	}
 )
 
 func pullRequest(w http.ResponseWriter, r *http.Request) {
-	parts := strings.Split(r.RemoteAddr, ":")
+	parts := strings.Split(r.Header.Get("x-real-ip"), ":")
 	if !validGithubIPs[parts[0]] {
 		log.Printf("reject=true ip=%s\n", parts[0])
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
