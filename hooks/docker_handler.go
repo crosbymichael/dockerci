@@ -6,13 +6,22 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 )
 
-type UnixHandler struct {
+type dockerHandler struct {
 }
 
-func (h *UnixHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	conn, err := net.Dial("unix", "/docker.sock")
+func newTcpHandler(addr string) http.Handler {
+	u, err := url.Parse(addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return httputil.NewSingleHostReverseProxy(u)
+}
+
+func (h *dockerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	conn, err := net.Dial("tcp", "172.17.42.1:4243")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
