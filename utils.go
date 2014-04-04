@@ -75,7 +75,6 @@ func Checkout(temp string, json *simplejson.Json) error {
 		return err
 	}
 	return nil
-
 }
 
 func MakeTest(temp, method string) (*Result, error) {
@@ -90,6 +89,7 @@ func MakeTest(temp, method string) (*Result, error) {
 		// it's ok for the make command to return a non-zero exit
 		// incase of a failed build
 		if _, ok := err.(*exec.ExitError); !ok {
+			log.Println(string(output))
 			return nil, err
 		}
 	} else {

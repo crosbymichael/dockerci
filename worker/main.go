@@ -55,6 +55,9 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 
 func pushResults(json *simplejson.Json, result *dockerci.Result) error {
 	log.Printf("size=%d success=%v\n", len(result.Output), result.Success)
+	if !result.Success {
+		log.Println(result.Output)
+	}
 
 	sha, err := dockerci.GetSha(json)
 	if err != nil {
