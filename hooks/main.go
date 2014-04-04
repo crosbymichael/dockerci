@@ -8,14 +8,25 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var (
-	writer *nsq.Writer
-	store  *dockerci.Store
+	writer         *nsq.Writer
+	store          *dockerci.Store
+	validGithubIPs = map[string]bool{
+		"207.97.227.253":  true,
+		"50.57.128.197":   true,
+		"108.171.174.178": true,
+	}
 )
 
 func pullRequest(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(r.RemoteAddr, ":")
+	if !validGithubIPs[parts[0]] {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
 	var (
 		rawPayload, json = getPayloadAndJson(r)
 		action           = getAction(json)
@@ -88,9 +99,9 @@ func githubCatchall(w http.ResponseWriter, r *http.Request) {
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
+	r.HandleFunc("/github", githubCatchall).Methods("POST")
 	r.HandleFunc("/github", ping).Headers("X-Github-Event", "ping").Methods("POST")
-	r.HandleFunc("/github", githubCatchall).Methods("POST").Host("api.github.com")
-	r.HandleFunc("/github", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST").Host("api.github.com")
+	r.HandleFunc("/github", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST")
 	return r
 }
 
