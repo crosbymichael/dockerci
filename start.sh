@@ -3,7 +3,7 @@
 echo 'starting bootstrap of your docker ci system'
 
 export REDIS=redis.prod.docker:6379
-export NSQD=nsqd.prod.docker:5150
+export NSQD=nsqd.prod.docker:4150
 export NSQ_LOOKUPD=nsqlookupd.prod.docker:4161
 
 echo 'pulling down images...'
@@ -46,7 +46,6 @@ docker run --name nsqd1 -d crosbymichael/nsqd -broadcast-address nsqd1.nsqd.prod
 docker run --name nsqadmin1 -d crosbymichael/nsqadmin -lookupd-http-address nsqlookupd.prod.docker:4161
 
 docker run --name redis1 -d crosbymichael/redis
-docker run --name redis-slave1 -d crosbymichael/redis --bind 0.0.0.0 --slaveof redis1.redis.prod.docker 6379
 
 echo 'starting hooks and workers...'
 docker run --name hooks1 -d -e REDIS -e NSQD crosbymichael/dockerci hooks
