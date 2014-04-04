@@ -48,7 +48,7 @@ docker run --name nsqadmin1 -d crosbymichael/nsqadmin -lookupd-http-address nsql
 docker run --name redis1 -d crosbymichael/redis
 
 echo 'starting hooks and workers...'
-docker run --name hooks1 -v /var/run/docker.sock:/var/run/docker.sock -d -e REDIS -e NSQD crosbymichael/dockerci hooks
+docker run --name hooks1 -v /var/run/docker.sock:/run/docker.sock -d -e REDIS -e NSQD crosbymichael/dockerci hooks
 
 docker run --name worker-binary -d -v /var/run/docker.sock:/var/run/docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=binary crosbymichael/dockerci worker
 docker run --name worker-cross -d -v /var/run/docker.sock:/var/run/docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=cross crosbymichael/dockerci worker
