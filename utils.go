@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"log"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -83,7 +84,7 @@ func MakeTest(temp, method string) (*Result, error) {
 		cmd    = exec.Command("make", method)
 	)
 	cmd.Dir = temp
-	cmd.Env = append(cmd.Env, "DOCKER_HOST=tcp://172.17.42.1:4243")
+	cmd.Env = append(os.Environ(), "DOCKER_HOST=tcp://172.17.42.1:4243")
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
