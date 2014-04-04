@@ -24,9 +24,10 @@ var (
 )
 
 func isValidSource(r *http.Request) bool {
-	parts := strings.Split(r.Header.Get("X-REAL-IP"), ":")
+	parts := strings.Split(r.Header.Get("X-Forwarded-For"), ":")
 	if !validGithubIPs[parts[0]] {
 		log.Printf("reject=true ip=%s host=%s\n", parts[0], r.Host)
+		return true // FIXME: hack for now until I get a working hipache
 		return false
 	}
 	return true
