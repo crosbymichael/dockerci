@@ -12,7 +12,7 @@ type UnixHandler struct {
 }
 
 func (h *UnixHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	conn, err := net.Dial("unix", "/var/run/docker.sock")
+	conn, err := net.Dial("unix", "/docker.sock")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
