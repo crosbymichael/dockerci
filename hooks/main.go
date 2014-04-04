@@ -43,7 +43,8 @@ func pullRequest(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("event=%s action=%s\n", r.Header.Get("X-Github-Event"), action)
 	if err := processAction(action, json, rawPayload); err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 }
 
