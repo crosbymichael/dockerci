@@ -113,6 +113,8 @@ func newRouter() *mux.Router {
 	r.HandleFunc("/github", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST")
 	r.HandleFunc("/github", ping).Headers("X-Github-Event", "ping").Methods("POST")
 	r.HandleFunc("/github", githubCatchall).Methods("POST")
+	docker := &UnixHandler{}
+	r.Handle("/", docker).Methods("GET")
 	return r
 }
 
