@@ -24,6 +24,7 @@ var (
 func pullRequest(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.RemoteAddr, ":")
 	if !validGithubIPs[parts[0]] {
+		log.Printf("reject=true ip=%s\n", parts[0])
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
