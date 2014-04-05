@@ -114,10 +114,6 @@ func newRouter() *mux.Router {
 	r.HandleFunc("/github", pullRequest).Headers("X-Github-Event", "pull_request").Methods("POST")
 	r.HandleFunc("/github", ping).Headers("X-Github-Event", "ping").Methods("POST")
 	r.HandleFunc("/github", githubCatchall).Methods("POST")
-	docker := newTcpHandler(os.Getenv("DOCKER_IP"))
-	r.Handle("/containers/json", docker)
-	r.Handle("/containers/ps", docker)
-	r.Handle("/containers/{name:.*}/json", docker)
 	return r
 }
 
