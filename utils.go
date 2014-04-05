@@ -89,10 +89,10 @@ func Build(temp, name string) error {
 	return nil
 }
 
-func MakeTest(temp, method, name string) (*Result, error) {
+func MakeTest(temp, method, image, name string) (*Result, error) {
 	var (
 		result = &Result{Method: method}
-		cmd    = exec.Command("docker", "run", "-t", "--privileged", "--name", name, "docker", "hack/make.sh", method)
+		cmd    = exec.Command("docker", "run", "-t", "--privileged", "--name", name, image, "hack/make.sh", method)
 	)
 	cmd.Dir = temp
 

@@ -51,13 +51,16 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 		return err
 	}
 
-	name := fmt.Sprintf("pr-%d-%s", number, sha)
-	log.Printf("method=%s name=%s\n", testMethod, name)
+	var (
+		image     = fmt.Sprintf("docker:pr-%d", number)
+		container = fmt.Sprintf("pr-%d-%s", number, sha)
+	)
+	log.Printf("method=%s image=%scontainer=%s\n", testMethod, image, container)
 
-	if err := dockerci.Build(temp, fmt.Sprintf("docker:pr-%d", number)); err != nil {
+	if err := dockerci.Build(temp, image); err != nil {
 		return err
 	}
-	result, err := dockerci.MakeTest(temp, testMethod, name)
+	result, err := dockerci.MakeTest(temp, testMethod, image, container)
 	if err != nil {
 		return err
 	}
