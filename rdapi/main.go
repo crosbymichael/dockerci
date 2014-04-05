@@ -63,7 +63,7 @@ func main() {
 		"/containers/{name:.*}/attach",
 	} {
 		r.Handle("/v{version:[0-9.]+}"+route, docker)
-		r.Handle(r, docker)
+		r.Handle(route, docker)
 	}
 
 	if err := http.ListenAndServe(":4243", r); err != nil {

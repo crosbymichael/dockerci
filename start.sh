@@ -50,7 +50,7 @@ docker run --name redis1 -d crosbymichael/redis
 echo 'starting hooks and workers...'
 docker run --name hooks1 -d -e REDIS -e NSQD crosbymichael/dockerci hooks
 
-docker run --name rdapi -p 4243:4243 -d -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_SOCK=/var/run/docker.sock crosbymichael/dockerci rdapi
+docker run --name rdapi -p 4243:4243 -d -v /var/run/docker.sock:/docker.sock -e DOCKER_SOCK=/docker.sock crosbymichael/dockerci rdapi
 
-docker run --name worker-binary -d -v /var/run/docker.sock:/var/run/docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=binary crosbymichael/dockerci worker
-docker run --name worker-cross -d -v /var/run/docker.sock:/var/run/docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=cross crosbymichael/dockerci worker
+docker run --name worker-binary -d -v /var/run/docker.sock:/docker.sock -e DOCKER_HOST=unix:///docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=binary crosbymichael/dockerci worker
+docker run --name worker-cross -d -v /var/run/docker.sock:/docker.sock -e DOCKER_HOST=unix:///docker.sock -e REDIS -e NSQ_LOOKUPD -e TEST_METHOD=cross crosbymichael/dockerci worker

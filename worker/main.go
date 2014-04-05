@@ -46,7 +46,14 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 	if err := dockerci.Checkout(temp, pullrequest); err != nil {
 		return err
 	}
-	result, err := dockerci.MakeTest(temp, testMethod)
+	sha, err := dockerci.GetSha(json)
+	if err != nil {
+		return err
+	}
+
+	name := fmt.Sprintf("pr:%d:%s", number, sha)
+	log.Printf("method=%s name=%s\n", testMethod, name)
+	result, err := dockerci.MakeTest(temp, testMethod, name)
 	if err != nil {
 		return err
 	}

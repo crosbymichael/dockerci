@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"log"
-	"os"
 	"os/exec"
 	"time"
 )
@@ -78,13 +77,12 @@ func Checkout(temp string, json *simplejson.Json) error {
 	return nil
 }
 
-func MakeTest(temp, method string) (*Result, error) {
+func MakeTest(temp, method, name string) (*Result, error) {
 	var (
 		result = &Result{Method: method}
-		cmd    = exec.Command("make", method)
+		cmd    = exec.Command("docker", "run", "-t", "--privileged", "--name", name, "docker", "hack/make.sh", method)
 	)
 	cmd.Dir = temp
-	cmd.Env = append(os.Environ(), "DOCKER_HOST=tcp://172.17.42.1:4243")
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
