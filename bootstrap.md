@@ -50,7 +50,7 @@ end script
 script
         # modify these in /etc/default/$UPSTART_JOB (/etc/default/docker)
         DOCKER=/usr/bin/$UPSTART_JOB
-        DOCKER_OPTS="--dns 172.17.42.1 -D -H unix:///var/run/docker.sock -H tcp://172.17.42.1:4243"
+        DOCKER_OPTS="--dns 172.17.42.1 -D --api-enable-cors"
         if [ -f /etc/default/$UPSTART_JOB ]; then
                 . /etc/default/$UPSTART_JOB
         fi

@@ -56,9 +56,9 @@ func copyHeader(dst, src http.Header) {
 func main() {
 	r := mux.NewRouter()
 	docker := &dockerHandler{os.Getenv("DOCKER_SOCK")}
-	r.Handle("/containers/json", docker)
-	r.Handle("/containers/ps", docker)
-	r.Handle("/containers/{name:.*}/json", docker)
+	r.Handle("/v{version:[0-9.]+}/containers/json", docker)
+	r.Handle("/v{version:[0-9.]+}/containers/ps", docker)
+	r.Handle("/v{version:[0-9.]+}/containers/{name:.*}/json", docker)
 
 	if err := http.ListenAndServe(":4243", r); err != nil {
 		log.Fatal(err)
