@@ -77,6 +77,18 @@ func Checkout(temp string, json *simplejson.Json) error {
 	return nil
 }
 
+func Build(temp, name string) error {
+	cmd := exec.Command("docker", "build", "-t", name, ".")
+	cmd.Dir = temp
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Println(string(output))
+		return err
+	}
+	return nil
+}
+
 func MakeTest(temp, method, name string) (*Result, error) {
 	var (
 		result = &Result{Method: method}
