@@ -53,9 +53,9 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 
 	var (
 		image     = fmt.Sprintf("docker:pr-%d", number)
-		container = fmt.Sprintf("pr-%d-%s", number, sha)
+		container = fmt.Sprintf("%s-pr-%d-%s", testMethod, number, sha)
 	)
-	log.Printf("method=%s image=%scontainer=%s\n", testMethod, image, container)
+	log.Printf("method=%s image=%s container=%s\n", testMethod, image, container)
 
 	if err := dockerci.Build(temp, image); err != nil {
 		return err
