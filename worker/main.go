@@ -16,6 +16,7 @@ import (
 var (
 	// binary, cross, test, test-integration
 	testMethod = os.Getenv("TEST_METHOD")
+	duration   time.Duration
 	store      *dockerci.Store
 )
 
@@ -60,7 +61,7 @@ func (h *handler) HandleMessage(msg *nsq.Message) error {
 	if err := dockerci.Build(temp, image); err != nil {
 		return err
 	}
-	result, err := dockerci.MakeTest(temp, testMethod, image, container)
+	result, err := dockerci.MakeTest(temp, testMethod, image, container, duration)
 	if err != nil {
 		return err
 	}
@@ -86,6 +87,16 @@ func pushResults(json *simplejson.Json, result *dockerci.Result) error {
 func validateConfiguration() {
 	if testMethod == "" {
 		log.Fatalln("TEST_METHOD cannot be empty provide (binary, cross, test, test-integration)")
+	}
+	rawD := os.Getenv("DURATION")
+	if rawD == "" {
+		duration = 5 * time.Minute
+	} else {
+		d, err := time.ParseDuration(rawD)
+		if err != nil {
+			log.Fatal(err)
+		}
+		duration = d
 	}
 }
 

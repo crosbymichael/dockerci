@@ -14,6 +14,11 @@ type Result struct {
 	Method  string
 }
 
+type runData struct {
+	output []byte
+	err    error
+}
+
 func (r *Result) ToData() map[string]string {
 	var (
 		stateKey = fmt.Sprintf("method-%s", r.Method)
@@ -89,26 +94,41 @@ func Build(temp, name string) error {
 	return nil
 }
 
-func MakeTest(temp, method, image, name string) (*Result, error) {
+func MakeTest(temp, method, image, name string, duration time.Duration) (*Result, error) {
 	var (
+		c      = make(chan *runData)
 		result = &Result{Method: method}
 		cmd    = exec.Command("docker", "run", "-t", "--privileged", "--name", name, image, "hack/make.sh", method)
 	)
 	cmd.Dir = temp
 
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// it's ok for the make command to return a non-zero exit
-		// incase of a failed build
-		if _, ok := err.(*exec.ExitError); !ok {
-			log.Println(string(output))
-			return nil, err
+	go func() {
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			// it's ok for the make command to return a non-zero exit
+			// incase of a failed build
+			if _, ok := err.(*exec.ExitError); !ok {
+				log.Println(string(output))
+			} else {
+				err = nil
+			}
 		}
-	} else {
-		result.Success = true
-	}
-	result.Output = string(output)
+		c <- &runData{output, err}
+	}()
 
+	select {
+	case data := <-c:
+		if data.err != nil {
+			return nil, data.err
+		}
+		result.Success = true
+		result.Output = string(data.output)
+	case <-time.After(duration):
+		if err := cmd.Process.Kill(); err != nil {
+			log.Println(err)
+		}
+		return nil, fmt.Errorf("killed because build took to long")
+	}
 	return result, nil
 }
 
